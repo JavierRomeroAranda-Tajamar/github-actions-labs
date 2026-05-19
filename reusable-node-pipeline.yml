@@ -1,0 +1,85 @@
+name: Reusable Node Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Versión de Node.js a utilizar"
+        required: true
+        type: string
+      artifact-name:
+        description: "Nombre del artifact generado"
+        required: true
+        type: string
+      retention-days:
+        description: "Días de retención del artifact"
+        required: false
+        default: 7
+        type: number
+
+    outputs:
+      node-version-used:
+        description: "Versión de Node.js usada en el pipeline"
+        value: ${{ jobs.node-pipeline.outputs.node-version-used }}
+      build-status:
+        description: "Estado final del build"
+        value: ${{ jobs.node-pipeline.outputs.build-status }}
+
+jobs:
+  node-pipeline:
+    runs-on: ubuntu-latest
+
+    outputs:
+      node-version-used: ${{ steps.pipeline-info.outputs.node-version-used }}
+      build-status: ${{ steps.pipeline-info.outputs.build-status }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Cache Node dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: node-cache-${{ runner.os }}-${{ inputs.node-version }}-${{ hashFiles('package-lock.json', 'package.json') }}
+          restore-keys: |
+            node-cache-${{ runner.os }}-${{ inputs.node-version }}-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests and save report
+        run: |
+          mkdir -p reports
+          npm test | tee reports/test-report.txt
+
+      - name: Build project
+        run: npm run build
+
+      - name: Save logs
+        run: |
+          mkdir -p logs
+          echo "Pipeline ejecutado correctamente" > logs/pipeline.log
+          echo "Node version: ${{ inputs.node-version }}" >> logs/pipeline.log
+          echo "Runner OS: ${{ runner.os }}" >> logs/pipeline.log
+
+      - name: Set pipeline outputs
+        id: pipeline-info
+        run: |
+          echo "node-version-used=${{ inputs.node-version }}" >> $GITHUB_OUTPUT
+          echo "build-status=success" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            dist/
+            reports/
+            logs/
+          retention-days: ${{ inputs.retention-days }}
