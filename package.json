@@ -1,0 +1,11 @@
+{
+  "name": "github-actions-labs",
+  "version": "1.0.0",
+  "description": "Laboratorio de GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js",
+    "build": "mkdir -p dist && echo 'Build generado correctamente' > dist/build.txt"
+  },
+  "dependencies": {}
+}
