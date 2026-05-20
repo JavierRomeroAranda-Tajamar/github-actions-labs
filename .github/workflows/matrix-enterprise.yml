@@ -1,0 +1,101 @@
+name: Matrix Build Enterprise
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: matrix-enterprise-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix-build:
+    name: ${{ matrix.os }} | Node ${{ matrix.node-version }} | ${{ matrix.mode }} | ${{ matrix.environment }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+        node-version:
+          - "18"
+          - "20"
+
+        mode:
+          - debug
+          - release
+
+        environment:
+          - dev
+          - staging
+
+        exclude:
+          - os: windows-latest
+            mode: debug
+
+          - os: ubuntu-latest
+            node-version: "18"
+            environment: staging
+
+        include:
+          - os: ubuntu-latest
+            node-version: "20"
+            mode: release
+            environment: production
+            enterprise-config: "prod-secure"
+            estimated-time: "5 minutes"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Show matrix configuration
+        run: |
+          echo "Operating system: ${{ matrix.os }}"
+          echo "Node version: ${{ matrix.node-version }}"
+          echo "Mode: ${{ matrix.mode }}"
+          echo "Environment: ${{ matrix.environment }}"
+          echo "Enterprise config: ${{ matrix.enterprise-config || 'standard' }}"
+          echo "Estimated time: ${{ matrix.estimated-time || '3 minutes' }}"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build project
+        run: npm run build
+
+      - name: Generate job summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Matrix Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Sistema operativo | ${{ matrix.os }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Node.js | ${{ matrix.node-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Modo | ${{ matrix.mode }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Entorno | ${{ matrix.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuración enterprise | ${{ matrix.enterprise-config || 'standard' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Resultado | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tiempo estimado | ${{ matrix.estimated-time || '3 minutes' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Información de matrix" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Este job se ha generado dinámicamente desde strategy.matrix." >> $GITHUB_STEP_SUMMARY
