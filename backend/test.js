@@ -1,1 +1,1 @@
-console.log("Backend tests ejecutados correctamente");
+console.log("Backend tests ejecutados correctamente - cambio LAB 7");
