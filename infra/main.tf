@@ -4,6 +4,6 @@ terraform {
 
 resource "null_resource" "lab7_example" {
   triggers = {
-    environment = "dev"
+    environment = "staging"
   }
 }
