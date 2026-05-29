@@ -1,0 +1,46 @@
+name: Consume Custom Action
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consume-custom-action:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate version using custom action
+        id: custom-version
+        uses: JavierRomeroAranda-Tajamar/custom-version-action@v1.0.0
+        with:
+          raw-name: "Feature/Login User"
+          prefix: "lab6"
+          environment: "staging"
+
+      - name: Use generated outputs
+        run: |
+          echo "Normalized name: ${{ steps.custom-version.outputs.normalized-name }}"
+          echo "Version: ${{ steps.custom-version.outputs.version }}"
+          echo "Is valid: ${{ steps.custom-version.outputs.is-valid }}"
+
+      - name: Use version in simulated deployment
+        run: |
+          echo "Deploying application with version:"
+          echo "${{ steps.custom-version.outputs.version }}"
+
+      - name: Generate workflow summary
+        run: |
+          echo "## LAB 6 - Custom Action Consumer" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Normalized name | ${{ steps.custom-version.outputs.normalized-name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ steps.custom-version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Is valid | ${{ steps.custom-version.outputs.is-valid }} |" >> $GITHUB_STEP_SUMMARY
+
