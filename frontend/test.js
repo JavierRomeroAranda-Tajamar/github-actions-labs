@@ -1,1 +1,1 @@
-console.log("Frontend tests ejecutados correctamente - cambio examen final");
+console.log("Frontend tests ejecutados correctamente - cambio LAB 7");
